@@ -1,0 +1,43 @@
+/* Trang Xu hướng. Dùng chung style nền của .ov (overview.css), file này chỉ thêm phần riêng. */
+
+/* Bảng Nghề đáng đầu tư: cuộn ngang bên trong thẻ trên màn hình hẹp, trang không bị cuộn ngang */
+.tr .tw{overflow-x:auto}
+.tr .ct{width:100%;border-collapse:collapse;min-width:820px}
+.tr .ct th{font-size:12px;color:var(--mut);font-weight:500;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tr .ct th.s{cursor:pointer}
+.tr .ct th.s:hover{color:var(--ink)}
+.tr .ct td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tr .ct tr.r{cursor:pointer}
+.tr .ct tr.r:hover td{background:var(--track)}
+.tr .ct tr.r.on td{background:var(--acc2)}
+.tr .ct .rk{color:var(--mut);font-weight:600;width:44px}
+.tr .ct .sc{font-size:16px}
+.tr .ct .why{margin-top:2px;max-width:360px}
+
+/* Nhãn hướng đi: luôn có chữ + mũi tên, màu chỉ là phụ */
+.tr .dir{font-weight:600;font-size:12.5px;white-space:nowrap}
+.tr .dir.up{color:var(--up)}
+.tr .dir.down{color:var(--dn)}
+.tr .dir.flat{color:var(--mut)}
+
+/* Khối biểu đồ dự báo: biểu đồ bên trái, ô tóm tắt bên phải */
+.tr .td{display:grid;grid-template-columns:1fr 170px;gap:12px;align-items:start}
+.tr .fs{display:grid;gap:6px;justify-items:start;background:var(--track);border-radius:10px;padding:12px}
+.tr .fs .big{font-size:17px}
+.tr .fs p{margin:2px 0 0}
+.tr .legend{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0 0}
+.tr .ln{display:inline-block;width:18px;height:0;border-top:2px solid var(--acc);vertical-align:middle}
+.tr .ln.est{opacity:.45}
+.tr .ln.fc{border-top-style:dashed}
+.tr .why-box{margin:10px 0 0;padding:10px 12px;background:var(--acc2);border-radius:10px;font-size:13px}
+.tr .fc-tip{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;color:var(--ink)}
+
+/* Kỹ năng: thêm cột hướng đi rộng hơn bản ở Tổng quan */
+.tr .sk{grid-template-columns:110px 1fr 40px 96px}
+
+@media(max-width:700px){
+  .tr .td{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+  .tr .sk{grid-template-columns:80px 1fr 36px 86px}
+}

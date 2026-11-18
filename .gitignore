@@ -1,0 +1,9 @@
+node_modules
+.next
+*.tsbuildinfo
+
+# Skill riêng cho Claude, không đưa lên git
+.claude/skills/
+
+# Sổ theo dõi khi thực hiện kế hoạch
+.superpowers/
