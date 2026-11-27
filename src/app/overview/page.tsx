@@ -34,7 +34,6 @@ export default function OverviewPage() {
             <h1>Thị trường tuyển dụng · {sectorLabel(filters.sector)}</h1>
             <p className="sub">Hà Nội · Đà Nẵng · TP.HCM · tin đang mở{s ? ` ngày ${viDate(s.generatedAt.slice(0, 10))}` : ''}</p>
           </div>
-          <span className="tag">Dữ liệu thật</span>
         </header>
         <FilterBar groupName={d?.selected?.name ?? null} showMode />
 

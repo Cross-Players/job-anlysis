@@ -40,7 +40,6 @@ export default function CompaniesPage() {
       <div className="wrap">
         <header>
           <div><h1>Công ty</h1><p className="sub">Ai đang tuyển ({sectorLabel(filters.sector)}), tuyển nhóm nghề nào, trả bao nhiêu · {cityLabel(city)}</p></div>
-          <span className="tag">Dữ liệu thật</span>
         </header>
         <CompanyFilters q={q} onQ={setQ} count={rows.length} showMode />
         {companies.error && <p className="mini">Không tải được dữ liệu: {companies.error}</p>}
