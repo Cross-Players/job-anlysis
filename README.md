@@ -74,3 +74,6 @@ deploy/         docker-compose.yml, nginx.conf, deploy.sh, backup-db.sh, systemd
 - `deploy/.env` (chỉ trên VPS): `DB_PASSWORD`.
 - Chạy tay: `cd /srv/job-analysis/deploy && systemctl start job-analysis-crawl.service` (cào + export + sao lưu), hoặc chỉ export: `docker compose --profile crawler run --rm crawler node src/export.ts`. Xem log: `journalctl -u job-analysis-crawl.service`.
 - Caddy (`/srv/ragre/app/deploy/vps/caddy/Caddyfile.letsencrypt`) định tuyến `jobs-analysis.crosstechedu.com` và `jobs.14-225-81-171.sslip.io` → `job-analysis:80`.
+
+## Giấy phép (License)
+Dự án được phân phối theo giấy phép mã nguồn mở **Apache License 2.0**. Xem chi tiết tại tệp [LICENSE](LICENSE).

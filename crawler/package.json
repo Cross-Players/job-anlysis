@@ -1,7 +1,7 @@
 {
   "name": "job-analysis-crawler",
   "version": "0.1.0",
-  "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "description": "Cào tin tuyển dụng IT theo lịch trên VPS. Chạy thẳng file .ts bằng Node 24 (type stripping), không cần build.",
   "engines": { "node": ">=24" },
