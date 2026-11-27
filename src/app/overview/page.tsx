@@ -7,6 +7,7 @@ import { getOverview, getSnapshot } from '@/api';
 import { useApi } from '@/api/useApi';
 import { FilterBar } from '@/components/overview/FilterBar';
 import { KpiCards } from '@/components/overview/KpiCards';
+import { InsightsCard } from '@/components/overview/InsightsCard';
 import { GroupMix } from '@/components/overview/GroupMix';
 import { TopSkills } from '@/components/overview/TopSkills';
 import { SalaryRanges } from '@/components/overview/SalaryRanges';
@@ -43,6 +44,7 @@ export default function OverviewPage() {
         {d && s && (
           <>
             <KpiCards d={d} />
+            <InsightsCard d={d} f={filters} />
             <div className="grid2">
               <GroupMix d={d} groupOrder={s.groups.map((g) => g.id)} subtitle={cityLabel(filters.city)} onPick={pick} />
               <TopSkills d={d} subtitle={scope} />

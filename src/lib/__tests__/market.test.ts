@@ -108,14 +108,21 @@ test('lọc theo ngành (sector) và hình thức làm việc (mode: onsite, hyb
   snap.jobs = [
     makeJob(1, { sector: 'it', mode: 'remote' }),
     makeJob(2, { sector: 'it', mode: 'hybrid' }),
-    makeJob(3, { sector: 'scm', mode: 'onsite' }),
-    makeJob(4, { sector: 'scm', mode: null }),
+    makeJob(3, { sector: 'scm', group: 'scm-procurement', mode: 'onsite', salaryMin: 15, salaryMax: 25, skills: ['Excel', 'Thu mua / Đàm phán'] }),
+    makeJob(4, { sector: 'scm', group: 'scm-procurement', mode: null, salaryMin: 20, salaryMax: 30, skills: ['Thu mua / Đàm phán', 'Quản lý nhà cung cấp (SRM)'] }),
   ];
   expect(computeOverview(snap, { ...DEFAULT_FILTERS, sector: 'scm' }, null).n).toBe(2);
   expect(computeOverview(snap, { ...DEFAULT_FILTERS, sector: 'it' }, null).n).toBe(2);
   expect(computeOverview(snap, { ...DEFAULT_FILTERS, mode: 'remote' }, null).n).toBe(1);
   expect(computeOverview(snap, { ...DEFAULT_FILTERS, mode: 'hybrid' }, null).n).toBe(1);
   expect(computeOverview(snap, { ...DEFAULT_FILTERS, mode: 'onsite' }, null).n).toBe(1);
+
+  // Chọn nhóm Thu mua trong SCM
+  const proc = computeOverview(snap, { ...DEFAULT_FILTERS, sector: 'scm' }, 'scm-procurement');
+  expect(proc.selected?.id).toBe('scm-procurement');
+  expect(proc.n).toBe(2);
+  expect(proc.salary?.med).toBe(22.5);
+  expect(proc.skills[0].name).toBe('Thu mua / Đàm phán');
 });
 
 test('trendReadiness: đủ 8 tuần mới sẵn sàng', () => {

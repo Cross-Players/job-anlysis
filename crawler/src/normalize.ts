@@ -113,7 +113,22 @@ const NON_SCM_ROLES = compile({
 
 const SCM_GROUP_RULES: [GroupId, Compiled][] = ([
   ['scm-planning', { vi: ['chuỗi cung ứng', 'kế hoạch cung ứng', 'kế hoạch sản xuất', 'hoạch định', 'điều độ'], en: ['supply chain', 'demand planning', 'supply planning', 'demand planner', 'supply planner', 'planner', 'materials', 's&op'], acr: ['SCM', 'MRP'] }],
-  ['scm-procurement', { vi: ['thu mua', 'mua hàng', 'cung ứng', 'tìm nguồn hàng', 'mua sắm'], en: ['procurement', 'purchasing', 'buyer', 'sourcing', 'vendor management', 'merchandiser'] }],
+  ['scm-procurement', {
+    vi: [
+      'thu mua', 'mua hàng', 'cung ứng', 'tìm nguồn hàng', 'mua sắm', 'vật tư',
+      'đấu thầu', 'hợp đồng mua sắm', 'mua vật tư', 'quản lý mua hàng',
+      'chuyên viên mua hàng', 'chuyên viên thu mua', 'nhân viên vật tư',
+      'quản lý vật tư', 'trưởng phòng mua hàng', 'trưởng phòng thu mua', 'thu mua vật tư'
+    ],
+    en: [
+      'procurement', 'purchasing', 'buyer', 'sourcing', 'vendor management',
+      'merchandiser', 'merchandising', 'purchaser', 'buying', 'bidding',
+      'purchasing staff', 'procurement specialist', 'procurement officer',
+      'purchasing officer', 'purchasing specialist', 'buyer specialist',
+      'sourcing specialist', 'sourcing officer', 'procurement lead', 'procurement manager'
+    ],
+    acr: ['PR']
+  }],
   ['scm-import-export', { vi: ['xuất nhập khẩu', 'hải quan', 'khai báo hải quan', 'thông quan', 'chứng từ'], en: ['import export', 'import', 'export', 'customs', 'documentation'], acr: ['XNK'] }],
   ['scm-warehouse', { vi: ['kho vận', 'quản lý kho', 'giám sát kho', 'trưởng kho', 'phó kho', 'thủ kho', 'kế toán kho', 'kiểm kho', 'kiểm soát kho', 'tồn kho', 'nhập xuất tồn', 'xuất nhập tồn', 'điều phối kho', 'vận hành kho', 'nhân viên kho', 'phụ kho', 'công nhân kho', 'admin kho', 'soạn hàng', 'đóng hàng', 'kho hàng', 'kho bãi', 'kho lạnh', 'hiện trường kho', 'đóng gói', 'xe nâng'], en: ['warehouse', 'inventory', 'stock', 'fulfillment', 'wms', 'forklift'] }],
   ['scm-logistics', { vi: ['điều phối', 'giao nhận', 'vận chuyển', 'vận tải', 'khai thác hàng', 'theo dõi đơn hàng'], en: ['logistics', 'logistic', 'forwarding', 'freight', 'shipping', 'dispatch', 'dispatcher', 'fleet', 'courier', '3pl', 'operation', 'operations', 'order fulfillment'] }],
@@ -131,6 +146,8 @@ export function isScmRole(title: string): boolean {
   if (hit(NON_SCM_ROLES, title)) {
     // Lái xe nâng / thủ kho kiêm xe nâng vẫn là việc kho, không phải tài xế đường dài hay bán hàng
     if (/xe nâng/i.test(title) && !/kinh doanh|bán hàng|sales|telesales|tuyển dụng|nhân sự/i.test(title)) return true;
+    // Việc thu mua / mua hàng / vật tư / procurement / buyer
+    if (/thu mua|mua hàng|mua sắm|vật tư|procurement|purchasing|buyer|sourcing|merchandis/i.test(title) && !/kinh doanh|tư vấn bán hàng|telesales|tuyển dụng|nhân sự|lễ tân|thư ký|bảo vệ/i.test(title)) return true;
     return false;
   }
   return true;
@@ -246,7 +263,7 @@ const SKILL_RULES: [string, RegExp][] = [
 // Kỹ năng đặc thù cho Chuỗi cung ứng (SCM)
 const SCM_SKILL_RULES: [string, RegExp][] = [
   ['Excel', /\bexcel\b/],
-  ['ERP (SAP/Odoo)', /\bsap\b|\bodoo\b|\berp\b/],
+  ['ERP (SAP/Odoo)', /\bsap\b|\bodoo\b|\berp\b|\boracle\b/],
   ['WMS', /\bwms\b|phần mềm quản lý kho/],
   ['Power BI', /\bpower\s*bi\b/],
   ['SQL', /\bsql\b/],
@@ -256,7 +273,10 @@ const SCM_SKILL_RULES: [string, RegExp][] = [
   ['Xuất nhập khẩu / Hải quan', /hải quan|\bcustoms\b|khai báo hải quan|thông quan|xuất nhập khẩu/],
   ['Incoterms', /\bincoterms?\b/],
   ['Chứng từ XNK', /chứng từ|vận đơn|\bb\/l\b|\bbill of lading\b|\bc\/o\b|\bl\/c\b/],
-  ['Thu mua / Đàm phán', /đàm phán|tìm kiếm nhà cung cấp|đánh giá nhà cung cấp|\bsourcing\b|\bprocurement\b|\bpurchasing\b/],
+  ['Thu mua / Đàm phán', /đàm phán|tìm kiếm nhà cung cấp|đánh giá nhà cung cấp|\bsourcing\b|\bprocurement\b|\bpurchasing\b|\bnegotiat/i],
+  ['Quản lý nhà cung cấp (SRM)', /nhà cung cấp|đánh giá nhà cung cấp|phát triển nhà cung cấp|\bvendor\b|\bsupplier\b|\bsrm\b/i],
+  ['Đấu thầu & Hợp đồng', /đấu thầu|\bbidding\b|\btender\b|hợp đồng mua bán|hợp đồng kinh tế|\bpurchasing contract\b/i],
+  ['Quản lý đơn hàng (PO)', /\bpo\b|đơn đặt hàng|đơn mua hàng|theo dõi đơn hàng|\bpurchase order\b/i],
   ['Quản lý tồn kho', /tồn kho|nhập xuất tồn|xuất nhập tồn|kiểm kê|\binventory\b|\bfifo\b|\bfefo\b/],
   ['Kế hoạch cung ứng (MRP)', /\bmrp\b|dự báo nhu cầu|\bdemand planning\b|\bsupply planning\b|kế hoạch sản xuất/],
   ['Logistics / Vận tải', /\blogistics?\b|vận tải|giao nhận|\bforwarding\b|\bfreight\b|\b3pl\b/],

@@ -114,6 +114,11 @@ test('isScmRole và scmGroupOf phân loại đúng tin Chuỗi cung ứng', () =
   assert.equal(isScmRole('Nhân Viên Thủ Kho Kiêm Lái Xe Nâng Hàng Hoá'), true);
   assert.equal(isScmRole('Chuyên Viên Thu Mua Vật Tư'), true);
   assert.equal(scmGroupOf('Chuyên Viên Thu Mua Vật Tư'), 'scm-procurement');
+  assert.equal(scmGroupOf('Purchasing Officer'), 'scm-procurement');
+  assert.equal(scmGroupOf('Senior Buyer'), 'scm-procurement');
+  assert.equal(scmGroupOf('Sourcing Specialist'), 'scm-procurement');
+  assert.equal(scmGroupOf('Nhân Viên Đấu Thầu Mua Sắm'), 'scm-procurement');
+  assert.equal(scmGroupOf('Nhân Viên Mua Hàng Quốc Tế'), 'scm-procurement');
   assert.equal(scmGroupOf('Kế Toán Kho'), 'scm-warehouse');
   assert.equal(scmGroupOf('Nhân Viên Thủ Kho Kiêm Lái Xe Nâng Hàng Hoá'), 'scm-warehouse');
   assert.equal(scmGroupOf('Nam - Phó Kho - Làm Việc Tại Hà Nội'), 'scm-warehouse');
@@ -127,6 +132,10 @@ test('extractSkills cho ngành SCM nhận kỹ năng chuỗi cung ứng', () => 
   assert.deepEqual(
     extractSkills('Sử dụng thành thạo Excel, SAP ERP, Incoterms, khai báo hải quan và tiếng Anh giao tiếp', 'scm'),
     ['Excel', 'ERP (SAP/Odoo)', 'Tiếng Anh', 'Xuất nhập khẩu / Hải quan', 'Incoterms'],
+  );
+  assert.deepEqual(
+    extractSkills('Quản lý đơn hàng PO, đàm phán hợp đồng mua bán với vendor, quản lý nhà cung cấp và đấu thầu', 'scm'),
+    ['Thu mua / Đàm phán', 'Quản lý nhà cung cấp (SRM)', 'Đấu thầu & Hợp đồng', 'Quản lý đơn hàng (PO)'],
   );
 });
 
@@ -157,5 +166,5 @@ test('toSnapshotJob gán sector scm và mode cho tin Chuỗi cung ứng', () => 
   assert.equal(job.sector, 'scm');
   assert.equal(job.group, 'scm-procurement');
   assert.equal(job.mode, 'onsite');
-  assert.deepEqual(job.skills, ['Excel', 'Thu mua / Đàm phán']);
+  assert.deepEqual(job.skills, ['Excel', 'Thu mua / Đàm phán', 'Quản lý nhà cung cấp (SRM)']);
 });

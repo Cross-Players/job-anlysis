@@ -8,6 +8,7 @@ import { CITIES, DEFAULT_FILTERS, LEVELS, SECTORS, WORK_MODES } from '@/lib/cons
 import { companyDetail, computeOverview } from '@/lib/market';
 import type { CityFilter, Filters, Level, SectorFilter, WorkMode } from '@/lib/types';
 import { KpiCards } from '@/components/overview/KpiCards';
+import { InsightsCard } from '@/components/overview/InsightsCard';
 import { GroupMix } from '@/components/overview/GroupMix';
 import { TopSkills } from '@/components/overview/TopSkills';
 import { SalaryRanges } from '@/components/overview/SalaryRanges';
@@ -42,6 +43,7 @@ for (const [label, snap] of [['đủ dữ liệu', makeSnapshot(300)], ['ít d�
         const d = computeOverview(snap, f, group);
         const out = [
           html(<KpiCards d={d} />),
+          html(<InsightsCard d={d} f={f} />),
           html(<GroupMix d={d} groupOrder={snap.groups.map((g) => g.id)} subtitle="x" onPick={() => {}} />),
           html(<TopSkills d={d} subtitle="x" />),
           html(<SalaryRanges d={d} subtitle="x" />),
