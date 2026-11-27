@@ -1,32 +1,30 @@
 'use client';
+// Kỹ năng được nhắc nhiều trong tin đang mở. Bấm một kỹ năng để sang trang Công ty đã lọc sẵn.
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
-import { ALL_SKILLS, IND } from '@/data/overview';
+import { EmptyFilterNote, SampleSize } from '@/components/ui/Reliability';
 import { useFilters } from '@/context/FilterContext';
-import type { Group } from '@/lib/types';
+import { MIN_SAMPLE } from '@/lib/constants';
+import type { OverviewData } from '@/lib/market';
 
-/** Kỹ năng được nhắc nhiều. Bấm một kỹ năng để sang trang Công ty đã lọc sẵn. */
-export function TopSkills({ ind, sel }: { ind: string; sel: Group | null }) {
+export function TopSkills({ d, subtitle }: { d: OverviewData; subtitle: string }) {
   const { setSkill } = useFilters();
   const router = useRouter();
-  const sk = ind === 'all' ? ALL_SKILLS : IND[ind].sk;
-  const [label, ...rows] = sk;
-  const f = sel ? 0.75 + (sel.id.length % 5) * 0.12 : 1; // demo: ước tính theo nhóm
-  const sm = Math.max(...rows.map((s) => s[1]));
+  const title = 'Kỹ năng được nhắc nhiều';
+  if (d.n < MIN_SAMPLE) return <Card title={title} subtitle={subtitle}><EmptyFilterNote n={d.n} /></Card>;
+  const max = Math.max(1, ...d.skills.map((s) => s.pct));
   return (
-    <Card title="Kỹ năng được nhắc nhiều" subtitle={`${label} · % tin có nhắc kỹ năng, một tin có thể nhắc nhiều kỹ năng${sel ? ` · ước tính trong nhóm ${sel.name}` : ''}`}>
-      {rows.map(([n, p]) => {
-        const v = Math.min(95, Math.round(p * f));
-        const delta = ((n.length * 7 + p) % 9) - 3;
-        return (
-          <div key={n} className="sk" style={{ cursor: 'pointer' }} title={`Xem công ty tuyển ${n}`} onClick={() => { setSkill(n); router.push('/companies'); }}>
-            <span>{n}</span>
-            <div className="trk"><i style={{ width: `${(v / (sm * f)) * 100 * 0.92}%` }} /></div>
-            <b style={{ textAlign: 'right' }}>{v}%</b>
-            <span className={`dl ${delta >= 0 ? 'up' : 'dn'}`}>{delta >= 0 ? '▲' : '▼'}{Math.abs(delta)}</span>
-          </div>
-        );
-      })}
+    <Card title={title} subtitle={`${subtitle} · % tin có nhắc, một tin có thể nhắc nhiều kỹ năng`} action={<SampleSize n={d.n} />}>
+      {d.skills.map((s) => (
+        <div key={s.name} className="sk" style={{ cursor: 'pointer' }} title={`Xem công ty tuyển ${s.name}`} onClick={() => { setSkill(s.name); router.push('/companies'); }}>
+          <span>{s.name}</span>
+          <div className="trk"><i style={{ width: `${(s.pct / max) * 100}%` }} /></div>
+          <b style={{ textAlign: 'right' }}>{Math.round(s.pct)}%</b>
+          <span className="mini" style={{ textAlign: 'right' }}>{s.n} tin</span>
+        </div>
+      ))}
+      {!d.skills.length && <p className="mini">Chưa nhận ra kỹ năng nào trong các tin này.</p>}
+      <p className="foot">Kỹ năng nhận ra bằng từ khóa trong chức danh và mô tả. Tin chỉ ghi chung chung (ví dụ IT support) thường không có kỹ năng nào.</p>
     </Card>
   );
 }

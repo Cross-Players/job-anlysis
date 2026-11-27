@@ -7,3 +7,13 @@ node_modules
 
 # Sổ theo dõi khi thực hiện kế hoạch
 .superpowers/
+
+# Bản build tĩnh (next export)
+out/
+
+# Bí mật chỉ có trên VPS
+deploy/.env
+
+# Snapshot số liệu thật (tải từ VPS khi chạy dev, xem README)
+public/data/
+/data/

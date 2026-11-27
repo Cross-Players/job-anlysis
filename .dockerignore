@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.git
+.claude
+.superpowers
+docs
+*.tsbuildinfo
+crawler
+deploy/.env
+public/data
+data

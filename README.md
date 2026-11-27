@@ -1,65 +1,76 @@
 # Hiring intelligence (Next.js)
 
-Bản demo dashboard thị trường tuyển dụng đa ngành và hồ sơ công ty, **phạm vi chỉ gồm 3 thành phố: Hà Nội, Đà Nẵng, TP.HCM**. **Toàn bộ số liệu là dữ liệu mẫu**, công ty là hư cấu.
+Dashboard thị trường tuyển dụng **IT** và hồ sơ công ty, **phạm vi chỉ gồm 3 thành phố: Hà Nội, Đà Nẵng, TP.HCM**.
+Số liệu là **tin thật đang mở**, crawler thu thập mỗi đêm trên VPS (thiết kế: `docs/superpowers/specs/2026-11-09-crawl-pipeline-design.md`).
 
 ## Chạy
 ```bash
 npm install
+mkdir -p public/data && scp vps:/srv/job-analysis/data/snapshot.json public/data/   # số liệu thật cho dev
 npm run dev      # http://localhost:3000
 npm run build    # build production
-npm test         # chạy toàn bộ test (Vitest)
+npm test         # test dashboard (Vitest)
+cd crawler && npm test   # test crawler (node --test, cần Node 24)
 ```
-Cần Node.js 18.17 trở lên.
+Dashboard cần Node.js 18.17 trở lên. `public/data/` không vào git.
+
+## Luồng dữ liệu
+```
+systemd timer 01:30 mỗi đêm (deploy/systemd)
+  → crawler/src/run.ts      sitemap → tin mới / tin đóng → tải trang tin → Postgres (raw_job, scan_run)
+  → crawler/src/export.ts   chuẩn hóa bằng quy tắc (normalize.ts) → /srv/job-analysis/data/snapshot.json
+  → backup-db.sh            pg_dump, giữ 14 ngày
+nginx phục vụ snapshot.json ở /data/snapshot.json → dashboard tải một lần, tính số theo bộ lọc ngay trên trình duyệt
+```
+Đổi dữ liệu **không cần build lại** trang. Đổi quy tắc phân loại chỉ cần export lại, không cần cào lại.
+
+### Nguồn
+| Nguồn | Trạng thái | Ghi chú |
+|---|---|---|
+| Vieclam24h | **Bật** (mặc định) | 3 danh mục IT: `it-phan-mem`, `it-phan-cung-mang`, `phan-tich-thong-ke-du-lieu`. Lương có số. Không có kỹ năng, hình thức làm việc. |
+| ITviec | **Tắt** | Điều khoản 2.2 cấm thu thập khi chưa có văn bản đồng ý; từ 2026-11-22 trả 403 cho bot. Bật lại bằng `CRAWL_SOURCES=vieclam24h,itviec` khi được đồng ý. |
+
+### Chuẩn hóa (`crawler/src/normalize.ts`, quy tắc, chưa dùng AI)
+- **Lọc tin IT:** mục IT của nguồn lẫn việc kinh doanh và nghề kỹ thuật khác (lắp camera, máy in, CNC…). Loại tin kinh doanh/văn phòng, loại nghề khác khi chức danh không có từ khóa IT rõ ràng, loại tin không khớp nhóm IT nào. Số tin bị loại hiện ở cuối mỗi trang.
+- **Nhóm nghề, cấp bậc:** theo từ khóa trong chức danh (tiếng Việt so có dấu, viết tắt so phân biệt hoa thường), cấp bậc thêm số tháng kinh nghiệm.
+- **Kỹ năng:** trường `skills` của nguồn, không có thì tìm từ khóa trong chức danh + mô tả.
+- **Lương:** chỉ khi nguồn ghi số; quy về triệu VND/tháng (USD theo `USD_VND`). Không có thì để trống.
+- Chưa gộp tin trùng giữa các nguồn / tin đăng lại (spec mục 6).
+
+### Đang ẩn vì chưa đủ dữ liệu
+- **Xu hướng & dự báo** (`/trends`, tab đã ẩn): cần ≥ 8 tuần thu thập (`MIN_TREND_WEEKS`). Trang chỉ báo ngày dự kiến có. `src/lib/forecast.ts` và `components/charts/ForecastChart.tsx` giữ lại để dùng khi đủ.
+- **So sánh kỳ trước, đà tuyển** của công ty: cần lịch sử.
+- **Hình thức làm việc** (bộ lọc tự hiện khi có ≥ 30 tin ghi rõ hình thức).
+- **Loại hình, lĩnh vực, quy mô công ty:** chưa có bước phân loại công ty.
+- Ngưỡng: `MIN_SAMPLE = 30` (KPI, tỷ trọng), `MIN_SALARY_SAMPLE = 10` (lương theo nhóm, dưới 30 ghi "mẫu nhỏ") trong `src/lib/constants.ts`.
 
 ## Các trang
-- **Tổng quan** (`/overview`): KPI, xu hướng theo tuần, cơ cấu ngành / nhóm nghề, kỹ năng, lương, công ty tuyển mạnh.
-- **Xu hướng** (`/trends`): bảng "Nghề đáng đầu tư" và biểu đồ dự báo 12 tuần tới của nghề đang chọn.
-- **Công ty** (`/companies`, `/companies/[id]`): danh sách, xếp hạng và hồ sơ công ty.
+- **Tổng quan** (`/overview`): KPI, cơ cấu nhóm nghề, kỹ năng, cấp bậc, lương theo nhóm, công ty tuyển nhiều.
+- **Công ty** (`/companies`, `/companies/profile?id=…`): danh sách và hồ sơ công ty, link về tin gốc.
 
-Bộ lọc **ngành, thành phố, thời gian (4/12/24 tuần), cấp bậc, hình thức làm việc** dùng chung cho mọi trang.
+Bộ lọc **thành phố, cấp bậc** (và hình thức khi đủ dữ liệu) dùng chung cho mọi trang.
 
 ## Cấu trúc
 ```
 src/
-  app/
-    layout.tsx, globals.css        khung chung, biến màu sáng/tối, nhãn độ tin cậy, thanh điều hướng
-    overview/page.tsx              trang Tổng quan
-    trends/page.tsx                trang Xu hướng & dự báo
-    companies/page.tsx             danh sách và xếp hạng công ty
-    companies/[id]/page.tsx        hồ sơ công ty
-  api/                             TẦNG DỮ LIỆU: mọi trang lấy số liệu qua đây (index.ts, types.ts, useApi.ts)
-  components/
-    overview/    FilterBar, KpiCards, InsightsCard, HotCompanies, TrendCard,
-                 GroupMix, TopSkills, SalaryRanges, DemandVsSalary
-    trends/      CareerTable, TrendDetail, SkillTrends
-    companies/   RoleSwitch, CompanyFilters, CompanyTable, profile/*
-    charts/      TrendLine, MixPie, ForecastChart (Recharts)
-    ui/          Card, Delta, Sparkline, CitySelect, FilterSelects, Reliability
-    layout/      TopNav
-  context/FilterContext.tsx        bộ lọc dùng chung
-  data/                            dữ liệu mẫu: series.ts (48 tuần / nhóm nghề), overview.ts, companies.ts, cities.ts
-  lib/                             types, constants, series, stats, overview, forecast, ranking, roles, profile, cities
-  styles/                          overview.css, company.css, trends.css (đặt trong .ov / .co / .tr)
+  api/          index.ts (tải snapshot), snapshot.ts (kiểu file, phải khớp crawler/src/export.ts), useApi.ts
+  lib/          market.ts (tính số liệu từ snapshot), constants, types, forecast (để dành)
+  app/          overview, companies, companies/profile, trends
+  components/   overview/*, companies/*, charts/MixPie + ForecastChart, ui/*, layout/TopNav
+  test/         fixture.ts (snapshot giả cho test)
+crawler/
+  src/          run.ts (cào), export.ts (xuất snapshot), normalize.ts (quy tắc), report.ts (báo cáo nhanh),
+                sources/ (vieclam24h, itviec, jsonld dùng chung), schema.sql
+deploy/         docker-compose.yml, nginx.conf, deploy.sh, backup-db.sh, systemd/
 ```
 
-## Nối dữ liệu thật (backend Python)
-- Chỉ cần sửa `src/api/index.ts`: thay ruột từng hàm bằng `fetch` tới backend, **giữ nguyên kiểu trả về** trong `src/api/types.ts`. Đây là "hợp đồng" dữ liệu cho backend.
-- Khi đó các file `src/data/*` và phần nhân hệ số trong `src/lib/series.ts`, `src/lib/cities.ts` không cần nữa: backend trả thẳng số đã lọc.
-- Dự báo (`src/lib/forecast.ts`) là bản tạm: đường thẳng xu hướng trên 12 tuần gần nhất. Backend nên thay bằng mô hình có mùa vụ (statsmodels).
-- Ngưỡng "Chưa đủ dữ liệu" là `MIN_SAMPLE = 30` tin trong `src/lib/constants.ts`. Trọng số điểm "Nghề đáng đầu tư" là `WEIGHTS` trong `src/lib/ranking.ts`.
-- Ngưỡng nhãn đà tuyển (25%, −10%, 6 tin) ở `companyStatus` trong `src/lib/stats.ts` là giá trị demo.
-- Lương so với nhóm tương đương hiện là số mô phỏng (`src/lib/profile.ts`).
-
 ## Test
-- `src/lib/__tests__/`: các hàm tính (lọc, dự báo, xếp hạng, công ty, tổng quan).
-- `src/api/__tests__/no-nan.test.ts`: thử mọi tổ hợp bộ lọc trên mọi hàm API, đảm bảo không có NaN.
-- `src/components/__tests__/`: render các thẻ ra HTML với mọi tổ hợp bộ lọc, đảm bảo không hiện NaN.
+- `src/lib/__tests__/market.test.ts`: các hàm tính (lương, cơ cấu, lọc thành phố, công ty).
+- `src/components/__tests__/render.test.tsx`: render các thẻ với mọi tổ hợp bộ lọc, snapshot đủ / ít / rỗng, đảm bảo không hiện NaN.
+- `crawler/test/`: đọc trang nguồn (trang mẫu tự viết), xóa thông tin cá nhân, quy tắc phân loại.
 
-## Phạm vi thành phố
-- Sản phẩm chỉ theo dõi Hà Nội, Đà Nẵng, TP.HCM. Khi nối dữ liệu thật, **tin ở nơi khác sẽ bị loại** ngay từ bước nhập.
-- "Cả 3 thành phố" (`city = 'all'` trong `FilterContext`) là tổng của 3 thành phố này.
-- Các hệ số sau trong `src/data/cities.ts` và `src/data/companies.ts` là **số mô phỏng**, cần thay bằng số tính từ dữ liệu thật:
-  - `CITY_SHARE`: tỷ trọng tin theo thành phố của từng ngành (số tin, số tin có lương, chuỗi theo tuần nhân theo hệ số này).
-  - `CITY_SALARY_FACTOR`: hệ số nhân lương P25 / trung vị / P75 theo thành phố.
-  - `cityShare` của từng công ty (`CITY_SPLIT`): tỷ trọng tin của công ty ở mỗi thành phố. Công ty dưới 10% ở một thành phố bị ẩn khi lọc thành phố đó.
-- Logic quy đổi theo thành phố nằm ở `src/lib/series.ts` và `src/lib/cities.ts`. Với dữ liệu thật nên thay bằng truy vấn lọc theo thành phố thay vì nhân hệ số.
+## Deploy (VPS)
+- `./deploy/deploy.sh`: rsync mã nguồn lên `vps:/srv/job-analysis` (không đụng `deploy/.env`, `data/`), build và chạy dashboard + Postgres, build image crawler, cài systemd timer.
+- `deploy/.env` (chỉ trên VPS): `DB_PASSWORD`.
+- Chạy tay: `cd /srv/job-analysis/deploy && systemctl start job-analysis-crawl.service` (cào + export + sao lưu), hoặc chỉ export: `docker compose --profile crawler run --rm crawler node src/export.ts`. Xem log: `journalctl -u job-analysis-crawl.service`.
+- Caddy (`/srv/ragre/app/deploy/vps/caddy/Caddyfile.letsencrypt`) định tuyến `jobs-analysis.crosstechedu.com` và `jobs.14-225-81-171.sslip.io` → `job-analysis:80`.

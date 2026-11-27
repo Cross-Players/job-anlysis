@@ -2,9 +2,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+// Tab "Xu hướng" ẩn cho đến khi đủ MIN_TREND_WEEKS tuần dữ liệu thật (trang /trends vẫn còn, chỉ báo ngày có)
 const TABS = [
   { href: '/overview', label: 'Tổng quan' },
-  { href: '/trends', label: 'Xu hướng' },
   { href: '/companies', label: 'Công ty' },
 ];
 

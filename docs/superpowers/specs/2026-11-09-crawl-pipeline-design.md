@@ -1,188 +1,190 @@
 # Thiết kế: Thu thập dữ liệu tuyển dụng thật cho Hiring Intelligence
 
-Ngày: 2026-11-09 · Trạng thái: bản nháp chờ duyệt
+Ngày: 2026-11-09 · Sửa lần 2: 2026-11-21 · Trạng thái: chờ chốt nguồn (xem mục 3)
+
+> **Thay đổi ở lần sửa 2026-11-21**
+> - Chỉ làm **ngành IT**. Bỏ Kế toán, Marketing.
+> - Chuyển sang **cào tự động theo lịch trên VPS**. Cách cũ là extension Chrome do người bấm.
+> - **Extension Chrome để sau**: chỉ dùng cho trang chặn cào từ máy chủ và cho mạng xã hội (mục 9). Chưa làm.
+> - Hosting: chạy trên VPS sẵn có, bỏ phương án Vercel + Neon/Supabase.
+> - Thêm kết quả kiểm tra thực tế từng nguồn (mục 3), trong đó có **điều khoản sử dụng**.
 
 ## 1. Mục đích và lý do
 
-Dashboard hiện tại (Next.js 14 + Recharts) đã có giao diện Tổng quan và Công ty khá đầy đủ, nhưng **toàn bộ số liệu là dữ liệu mẫu**. Dự án này xây phần còn thiếu: lấy tin tuyển dụng thật từ các trang tuyển dụng, làm sạch, phân loại, lưu lại theo thời gian, rồi nối vào dashboard.
+Dashboard hiện tại (Next.js 14 + Recharts) đã có giao diện Tổng quan, Xu hướng và Công ty, nhưng **toàn bộ số liệu là dữ liệu mẫu**. Phần cần xây là: lấy tin tuyển dụng IT thật, làm sạch, phân loại, lưu lại theo thời gian, rồi nối vào dashboard.
 
-**Người dùng chính:** sinh viên và người tìm việc. Câu hỏi họ cần trả lời: *"Mình nên đi hướng nào?"*, tức là ngành, domain, kỹ năng nào đang lên và có tiếp tục lên trong vài tháng tới không. So sánh công ty (stack, outsource/product, ưu đãi, lương) là bước thứ hai, khi họ đã chọn hướng và cần chọn nơi nộp.
+**Người dùng chính:** sinh viên và người tìm việc IT. Câu hỏi họ cần trả lời: *"Mình nên đi hướng nào?"*, tức là nhóm nghề, kỹ năng, domain nào đang lên và có tiếp tục lên trong vài tháng tới không. So sánh công ty (stack, outsource/product, ưu đãi, lương) là bước thứ hai.
 
-**Thành công là:** một sinh viên mở dashboard, thấy số liệu thật của Hà Nội, Đà Nẵng, TP.HCM theo tuần, và tin được các con số đó.
+**Thành công là:** một sinh viên mở dashboard, thấy số liệu IT thật của Hà Nội, Đà Nẵng, TP.HCM theo tuần, và tin được các con số đó.
+
+**Vì sao chọn cào tự động:** điều tài liệu này sợ nhất là biểu đồ phản ánh việc "nhóm cào nhiều hay ít" thay vì thị trường. Cào theo lịch cố định quét cùng một phạm vi mỗi ngày, nên độ phủ ổn định và xu hướng theo tuần so sánh được với nhau. Extension phụ thuộc vào việc tuần đó có ai bấm hay không.
 
 ## 2. Những gì đã chốt
 
-- **Nguồn:** các trang web tuyển dụng trước. Mạng xã hội để giai đoạn sau.
-- **Phạm vi:** chỉ Hà Nội, Đà Nẵng, TP.HCM. Tin ở nơi khác bị loại ngay khi nhận.
-- **Đa ngành:** không chỉ IT (hiện có IT, Kế toán, Marketing, sẽ mở rộng).
-- **Cách cào:** người dùng mở trang tuyển dụng trên Chrome, dùng **extension Chrome** cào, extension **gửi dữ liệu sang một web/máy chủ khác** để lưu và xử lý.
-- **Cào và phân tích khi được gọi:** chỉ khi người dùng đang ở trang tuyển dụng và bấm extension thì mới bắt đầu cào. Cào xong, máy chủ phân tích ngay, rồi **mở một trang mới** hiện kết quả phân tích của lần cào đó (xem 4.5). Không có chương trình chạy ngầm tự cào.
-- **Ngành ngoài danh mục:** lưu hết. Tin không thuộc ngành đã định nghĩa thì xếp vào "Khác". Khi mở thêm ngành thì phân loại lại từ dữ liệu đã lưu.
-- **Hosting:** dùng dịch vụ có gói miễn phí hoặc rẻ (Vercel + Neon/Supabase). Nếu vướng giới hạn thời gian chạy hoặc chi phí thì chuyển phần xử lý sang VPS tự thuê.
-- **Người dùng extension:** trước mắt là nhóm nội bộ. *(Cách mình hiểu câu "cả 3 luôn": làm cả 3 phần extension, lưu trữ/xử lý, nối dashboard; và thiết kế sao cho sau này mở cho nhiều người cùng góp dữ liệu.)*
-- **Làm sạch:** kết hợp quy tắc và AI (xem mục 5).
-- **Giao diện:** giữ nguyên giao diện hiện có, giữ các kiểu dữ liệu trong `src/lib/types.ts` (hoặc mở rộng, không phá).
+- **Ngành:** chỉ IT. Tin không phải IT trên trang nguồn thì bỏ qua, không lưu.
+- **Phạm vi:** chỉ Hà Nội, Đà Nẵng, TP.HCM. Tin ở nơi khác bị loại khi nhận.
+- **Cách cào:** chương trình chạy theo lịch trên VPS (mỗi đêm), mỗi nguồn có một adapter riêng.
+- **Thứ tự nguồn:** chỉ làm trước những trang cho phép cào từ máy chủ. Trang chặn thì không lách (không dùng proxy dân dụng hay công cụ vượt Cloudflare), mà để cho extension sau này.
+- **Làm sạch:** kết hợp quy tắc và AI (mục 6).
+- **Giao diện:** giữ nguyên, giữ các kiểu dữ liệu trong `src/api/types.ts` và `src/lib/types.ts` (chỉ mở rộng, không phá).
 
-## 3. Mục tiêu, không làm, và điều phải tránh
+## 3. Kiểm tra nguồn (2026-11-21)
+
+Kiểm tra từ IP của VPS, mỗi trang vài request.
+
+| Trang | robots.txt | Từ VPS | Cấu trúc dữ liệu | Điều khoản sử dụng |
+|---|---|---|---|---|
+| **ITviec** | Cho phép, sitemap `dunggiatminh.xml` | 200 | Sitemap `twinnings_jobs_desc_vn.xml` có ~590 tin đang mở. Trang tin có JSON-LD `JobPosting` đủ trường chính | **Mục 2.2 cấm** tải hoặc sao chép nội dung ngoài mục đích cá nhân khi chưa được đồng ý bằng văn bản |
+| **VietnamWorks** | Không trả nội dung | 200 | Danh sách tải bằng JS, cần trình duyệt headless | **Cấm** sao chép, tái sử dụng nội dung (ngoại trừ bản sao hợp lý cho cá nhân) |
+| **Vieclam24h** | Cho phép, có sitemap | 200 | Chưa kiểm tra trang tin. Tin IT ít hơn trang chuyên IT | Tìm theo từ khóa **không thấy điều khoản cấm cào** (chưa đọc toàn văn) |
+| **CareerViet** | Không trả nội dung | 200 | Danh sách tải bằng JS | Chưa tìm thấy trang điều khoản |
+| **TopDev** | Cho phép | **Hết thời gian chờ** (máy cá nhân vào được) | Nhiều khả năng chặn IP datacenter | Chưa kiểm tra |
+| **TopCV** | Cho phép trang tin | **403 + thử thách Cloudflare** (từ máy cá nhân cũng bị) | Chặn client không phải trình duyệt | Chưa kiểm tra |
+
+**Điểm cần chốt:** `robots.txt` cho phép **không có nghĩa là** điều khoản cho phép. Hai nguồn tốt nhất về kỹ thuật (ITviec, VietnamWorks) đều cấm trong điều khoản. Phương án:
+- **A. Xin phép bằng văn bản** ITviec và VietnamWorks (email đối tác/hỗ trợ, nêu rõ dự án phi thương mại cho sinh viên, chỉ công khai số tổng hợp). Trong lúc chờ, chạy nguồn chưa thấy cấm (Vieclam24h).
+- **B. Chấp nhận rủi ro:** cào ITviec chỉ lấy dữ kiện (chức danh, kỹ năng, thành phố, ngày đăng), chỉ công khai số tổng hợp, không đăng lại nội dung tin. Đây là cách làm phổ biến, nhưng vẫn là vi phạm điều khoản. Rủi ro là bị chặn IP hoặc nhận yêu cầu dừng.
+- **C (đề xuất):** xây bộ máy cào chung kèm adapter ITviec, nhưng **tắt adapter ITviec cho đến khi có văn bản đồng ý**. Chạy Vieclam24h trước, gửi email xin phép song song.
+
+*(Đây là đánh giá kỹ thuật, không phải tư vấn pháp lý.)*
+
+**Hệ quả với dữ liệu ITviec (nếu được dùng):** lương bị ẩn khi chưa đăng nhập (JSON-LD ghi `"You'll love it"`), nên phần lớn tin không có lương. Một số tin ghi lương trong `jobBenefits` dạng chữ ("13 - 16 triệu/tháng"), có thể tách bằng quy tắc. Không đoán lương. Dashboard phải hiện tỷ lệ tin có lương.
+
+## 4. Mục tiêu, không làm, và điều phải tránh
 
 **Mục tiêu**
-1. Extension cào được trang danh sách và trang chi tiết tin của ít nhất một trang tuyển dụng, có chế độ tự lật nhiều trang kết quả.
-2. Máy chủ nhận, lưu bản gốc, gộp tin trùng, chuẩn hóa, phân loại bằng quy tắc + AI.
+1. Crawler chạy mỗi đêm trên VPS, lấy tin IT mới và đánh dấu tin đã đóng của các nguồn được phép.
+2. Lưu bản gốc, gộp tin trùng (giữa các nguồn và tin đăng lại), chuẩn hóa, phân loại bằng quy tắc + AI.
 3. Hồ sơ công ty: loại hình (Outsource / Product / Startup / In-house), lĩnh vực, stack, % onsite, ưu đãi.
-4. Dashboard đọc số liệu thật: xu hướng theo tuần, tỷ trọng ngành/nhóm nghề/kỹ năng, lương P25/trung vị/P75, so sánh lương với vị trí tương đương, đà tuyển của công ty.
-5. Đánh giá xu hướng và dự báo ngắn hạn (vài tháng) dựa trên nhu cầu thị trường.
+4. Dashboard đọc số liệu thật: xu hướng theo tuần, tỷ trọng nhóm nghề / kỹ năng, lương P25/trung vị/P75 (khi đủ mẫu), đà tuyển của công ty.
+5. Xu hướng và dự báo ngắn hạn (vài tháng).
 
 **Không làm (giai đoạn này)**
-- Cào mạng xã hội (Facebook group, LinkedIn…).
+- Ngành ngoài IT.
+- Extension Chrome, mạng xã hội (để ở mục 9).
 - Tài khoản người dùng cho người xem dashboard.
 - Thành phố ngoài 3 thành phố trên.
+- Lách cơ chế chặn của bất kỳ trang nào.
 
 **Điều phải tránh (làm vậy là hỏng dù code chạy được)**
-- **AI bịa số.** Tin không ghi lương thì lương để trống, không đoán. Mọi trường do AI suy ra phải lưu kèm mức độ tin cậy.
-- **Biểu đồ phản ánh việc "nhóm cào nhiều hay ít" thay vì thị trường.** Phải tính độ phủ cào mỗi tuần và cảnh báo khi độ phủ thấp.
+- **AI bịa số.** Tin không ghi lương thì để trống. Mọi trường do AI suy ra phải lưu kèm mức độ tin cậy.
 - **Đếm trùng** một tin đăng trên nhiều trang hoặc đăng lại.
-- **Bị trang tuyển dụng khóa** tài khoản hoặc IP của nhóm vì cào quá nhanh.
-- **Lưu thông tin cá nhân** (số điện thoại, email người tuyển dụng). Không lưu.
+- **Bị chặn IP của VPS.** VPS còn chạy các dịch vụ khác, nên tốc độ cào phải thấp (mục 5.1).
+- **Lưu thông tin cá nhân** (tên, số điện thoại, email người tuyển dụng). Không lưu.
+- **Đăng lại nội dung tin.** Dashboard chỉ hiện số tổng hợp và link về tin gốc.
 
-## 4. Kiến trúc tổng thể
+## 5. Kiến trúc
 
 ```
-[Trang tuyển dụng trên Chrome]
-        │  extension đọc DOM / dữ liệu có cấu trúc trong trang
-        ▼
-[Extension Chrome] ──gửi lô tin (JSON)──▶ [API nhận dữ liệu]
-                                              │ lưu bản gốc
-                                              ▼
-                                        [CSDL: tin gốc]
-                                              │ xử lý nền
-                                              ▼
-                     quy tắc → gộp trùng → AI phân loại → [CSDL: tin chuẩn hóa, công ty]
-                                              │ tổng hợp theo tuần
-                                              ▼
-                                        [Số liệu tổng hợp] ──▶ [Dashboard Next.js hiện có]
+systemd timer trên VPS (mỗi đêm, giờ thấp điểm)
+  → crawler (container, chạy xong thì thoát)
+      mỗi nguồn một adapter:
+        - sitemap → danh sách URL tin đang mở
+        - so với lần trước: URL mới → tải trang tin; URL biến mất → đánh dấu đã đóng
+        - đọc JSON-LD JobPosting; thiếu thì đọc HTML; trang tải bằng JS → Playwright
+        - xóa SĐT/email → lưu bản gốc + các trường đã đọc
+        - ghi "lần quét": nguồn, thời điểm, tổng URL trong sitemap, số tải được, số lỗi
+  → xử lý: quy tắc → gộp trùng → AI phân loại (chỉ tin mới / thay đổi)
+  → tổng hợp theo tuần
+  → API đọc số liệu ──▶ dashboard Next.js (thay ruột src/api/index.ts)
 ```
 
-### 4.1 Extension Chrome
-- Mỗi trang tuyển dụng có một "bộ đọc" riêng (adapter), để thêm trang mới không đụng phần còn lại.
-- Hai chế độ:
-  - **Cào trang đang xem:** bấm nút, lấy các tin trên trang.
-  - **Cào danh sách:** chọn bộ lọc trên trang (ví dụ "Kế toán, Hà Nội"), extension tự lật trang 1..N và mở trang chi tiết, có khoảng nghỉ ngẫu nhiên giống người thật và giới hạn số trang mỗi giờ.
-- Ưu tiên đọc dữ liệu có cấu trúc trong trang (JSON-LD `JobPosting` nếu có), sau đó mới đọc HTML.
-- Gửi theo lô lên API, kèm: nguồn, URL, thời điểm cào, phiên bản adapter, mã người cào.
-- Hiển thị trong trang những tin đã cào (để không cào lại vô ích) và tổng số đã gửi hôm nay.
-- Mỗi người cài có một mã (token) cá nhân. Hiện dùng cho nhóm nội bộ, sau này dùng để mở cho nhiều người.
-- Mỗi lần bấm tạo một **phiên cào** (có mã phiên). Cào xong, extension mở tab mới tới trang kết quả của phiên đó.
+### 5.1 Crawler
+- **Adapter theo nguồn**, cùng một giao diện: `listOpenJobs()` trả danh sách URL kèm mã tin, `fetchJob(url)` trả các trường chuẩn và bản gốc. Thêm nguồn mới không đụng phần còn lại.
+- **Mỗi adapter có cờ bật/tắt** trong cấu hình, kèm ghi chú lý do (ví dụ "chờ ITviec đồng ý").
+- **Tốc độ:** mỗi nguồn tối đa 1 request mỗi 3–5 giây (có dao động ngẫu nhiên), một luồng. Lần đầu (~600 tin) mất khoảng 40 phút. Các đêm sau chỉ tải tin mới, vài phút.
+- **User-Agent trung thực**, có tên dự án và link trang giới thiệu, để trang nguồn biết ai đang cào và liên hệ được.
+- **Gặp 403, 429 hoặc trang thử thách:** dừng nguồn đó trong lượt quét, ghi lỗi, không thử lại dồn dập.
+- **Độ phủ:** tổng URL trong sitemap là mẫu số. Độ phủ = số tin tải được ÷ tổng URL trong sitemap, ghi cho mỗi lần quét.
 
-### 4.5 Trang kết quả phiên cào (mới)
-- Mở ngay sau khi cào. Hiện tiến độ trong lúc AI đang phân tích ("đã xử lý 40/120 tin").
-- Nội dung: số tin lấy được, số tin trùng hoặc bị loại (ngoài 3 thành phố), phân bố ngành / nhóm nghề / cấp bậc, top kỹ năng, khoảng lương, danh sách công ty kèm loại hình và lĩnh vực, ưu đãi nổi bật, và độ phủ (số tin lấy được ÷ tổng trang báo).
-- Có nút sang dashboard Tổng quan. Dữ liệu của phiên đồng thời được cộng dồn vào kho chung để vẽ xu hướng theo thời gian. *(Phần cộng dồn là cách mình hiểu, sửa nếu sai.)*
-- Dùng lại style và component sẵn có (Card, biểu đồ Recharts).
+### 5.2 Lưu trữ
+- PostgreSQL riêng cho dự án (container `job-analysis-db`), không dùng chung DB của dịch vụ khác trên VPS.
+- Bảng chính:
+  - `scan_run`: lần quét, theo nguồn, kèm độ phủ.
+  - `raw_job`: bản gốc đã xóa thông tin cá nhân, khóa là (nguồn, mã tin). Có `first_seen`, `last_seen`, `closed_at`.
+  - `job`: tin đã chuẩn hóa, liên kết về các bản gốc.
+  - `company`: công ty và nhãn kèm độ tin cậy.
+  - `weekly_stats`: số đã tổng hợp.
+- **Luôn lưu bản gốc** để khi sửa quy tắc hoặc prompt có thể xử lý lại mà không cần cào lại.
 
-### 4.2 Máy chủ nhận và lưu
-- API nhận lô tin, kiểm tra token, kiểm tra định dạng, loại tin ngoài 3 thành phố.
-- **Luôn lưu bản gốc** (HTML/text của phần tin + các trường đã đọc), để sau này sửa quy tắc hoặc prompt AI thì xử lý lại được mà không cần cào lại.
-- Một tin được xác định bởi (nguồn, mã tin trên nguồn). Lần cào sau cùng tin chỉ cập nhật "lần thấy gần nhất", nhờ đó biết tin còn mở bao lâu.
+### 5.3 Tổng hợp và dashboard
+- Tính sẵn theo (tuần × thành phố × nhóm nghề × cấp bậc × hình thức), thay cho các hệ số giả ở `src/lib/cities.ts` và `src/data/*`.
+- Dashboard gọi API thay vì import `src/data/`. Bỏ bộ chọn ngành (chỉ còn IT).
+- Mỗi con số kèm cỡ mẫu (n). Dưới ngưỡng thì hiện "Chưa đủ dữ liệu".
+- Build tĩnh hiện tại (`output: 'export'`) sẽ đổi thành: hoặc trang tĩnh gọi API qua `fetch` phía trình duyệt, hoặc bỏ export tĩnh. Quyết định khi nối dashboard.
 
-### 4.3 Xử lý (chuẩn hóa)
-Xem mục 5.
-
-### 4.4 Tổng hợp và dashboard
-- Tính sẵn số liệu theo (tuần × thành phố × ngành × nhóm nghề × cấp bậc), thay cho việc nhân hệ số giả ở `src/lib/cities.ts`, `src/data/*`.
-- Dashboard gọi API lấy số liệu thay vì import từ `src/data/`. Mở khóa bộ lọc thời gian, cấp bậc, hình thức làm việc.
-- Mỗi con số hiển thị kèm cỡ mẫu (n). Dưới ngưỡng tối thiểu thì hiện "Chưa đủ dữ liệu", giống `companyStatus` hiện tại.
-
-## 5. Làm sạch dữ liệu: quy tắc trước, AI sau
+## 6. Làm sạch dữ liệu: quy tắc trước, AI sau
 
 | Việc | Cách làm | Ghi chú |
 |---|---|---|
-| Lương | Quy tắc tách "15–20 triệu", "Up to 2000$", "Thỏa thuận"… ra min/max/tiền tệ, quy đổi về triệu VND/tháng | "Thỏa thuận" = không có lương, không đoán |
-| Thành phố, ngày đăng, hạn nộp | Lấy từ trường có cấu trúc | Chuẩn hóa tên ("HCM", "Sài Gòn" → hcm) |
-| Gộp tin trùng | Cùng công ty (đã chuẩn hóa tên) + tiêu đề gần giống + thành phố + khoảng thời gian gần | Giữ liên kết tới mọi bản gốc |
-| Ngành, nhóm nghề | AI phân loại vào danh mục cố định | Danh mục do mình định nghĩa, AI không tự tạo nhóm mới |
-| Cấp bậc | Quy tắc từ tiêu đề/trường có sẵn, AI nếu mơ hồ | Intern / Fresher / Junior / Middle / Senior / Lead / Quản lý |
-| Kỹ năng | AI trích từ mô tả, map về danh sách kỹ năng chuẩn | "ReactJS", "React.js" → React |
-| Hình thức làm việc | Quy tắc + AI | Onsite / Hybrid / Remote |
-| Ưu đãi | AI trích từ mô tả | Lương tháng 13, xét tăng lương mấy lần/năm, bảo hiểm, thưởng, đào tạo… |
-| Loại hình + lĩnh vực công ty | AI đọc trang giới thiệu công ty **một lần cho mỗi công ty**, lưu kèm độ tin cậy và nguồn | Có thể sửa tay; nhãn tay thắng nhãn AI (khớp với trường `ev` "nguồn nhãn" đang có) |
-| Stack công ty | Cộng dồn kỹ năng từ các tin của công ty đó | Không cần AI |
+| Lương | Quy tắc tách "15–20 triệu", "Up to 2000$", "Thỏa thuận"… ra min/max/tiền tệ, quy đổi về triệu VND/tháng | Không có hoặc bị ẩn = để trống, không đoán |
+| Thành phố, ngày đăng, hạn nộp | Lấy từ trường có cấu trúc (`addressRegion`, `datePosted`, `validThrough`) | Chuẩn hóa tên ("Hồ Chí Minh", "HCM" → hcm) |
+| Gộp tin trùng | Cùng công ty (tên đã chuẩn hóa) + tiêu đề gần giống + thành phố + thời gian gần nhau | Giữ liên kết tới mọi bản gốc |
+| Nhóm nghề IT | AI phân loại vào danh mục cố định (Web, Data, QA, DevOps, Mobile, Khác…) | AI không tự tạo nhóm mới |
+| Cấp bậc | Quy tắc từ tiêu đề và số tháng kinh nghiệm, AI nếu mơ hồ | Intern / Fresher / Junior / Middle / Senior / Lead |
+| Kỹ năng | Lấy trường `skills` nếu có, map về danh sách chuẩn. AI trích từ mô tả khi thiếu | "ReactJS", "React.js" → React |
+| Hình thức làm việc | Quy tắc từ trang (ITviec: "Tại văn phòng" / "Linh hoạt" / từ xa) + AI | Onsite / Hybrid / Remote |
+| Ưu đãi | AI trích từ mô tả và phần phúc lợi | Lương tháng 13, xét tăng lương, bảo hiểm, đào tạo… |
+| Loại hình + lĩnh vực công ty | AI đọc trang công ty **một lần cho mỗi công ty**, lưu kèm độ tin cậy | Nhãn tay thắng nhãn AI |
+| Stack công ty | Cộng dồn kỹ năng từ các tin của công ty | Không cần AI |
 
 Nguyên tắc cho AI:
-- Chỉ trích những gì có trong văn bản. Trả về dạng có cấu trúc cố định, trường nào không có thì để trống.
-- Mỗi kết quả lưu kèm phiên bản prompt/model để biết dữ liệu nào cần xử lý lại.
-- Chỉ xử lý tin mới hoặc tin thay đổi. Dùng model nhỏ, rẻ, xử lý theo lô.
+- Chỉ trích những gì có trong văn bản, trả về dạng có cấu trúc cố định, trường nào thiếu thì để trống.
+- Lưu kèm phiên bản prompt/model.
+- Chỉ xử lý tin mới hoặc tin thay đổi, theo lô, dùng model nhỏ (ví dụ Claude Haiku).
 
-## 6. Dữ liệu quá khứ (khoảng 3 tháng)
+## 7. Dữ liệu quá khứ
 
-Trang tuyển dụng thường chỉ hiện tin **đang mở**, nên không lấy lại được đầy đủ 3 tháng trước. Cách xử lý:
-- Tin còn mở có ngày đăng trong 3 tháng qua sẽ được dùng để **ước lượng** quá khứ. Dashboard phải ghi rõ đây là ước lượng, vì thiếu các tin đã đóng.
-- **Bắt đầu tích lũy càng sớm càng tốt.** So sánh "3 tháng gần nhất" chỉ thật sự đúng sau khoảng 3 tháng cào đều.
+Trang nguồn chỉ hiện tin **đang mở**. Tin còn mở có ngày đăng trong 3 tháng qua dùng để **ước lượng** quá khứ, và dashboard phải ghi rõ là ước lượng. **Bắt đầu tích lũy càng sớm càng tốt:** so sánh 3 tháng chỉ đúng sau khoảng 3 tháng cào đều.
 
-## 7. Đánh giá xu hướng và dự báo
+## 8. Xu hướng và dự báo
 
-Các tiêu chí đánh giá một nghề/kỹ năng/domain (đề xuất, nhóm có thể chỉnh trọng số):
-1. **Đà nhu cầu:** số tin 4 tuần gần nhất so với 4 tuần trước, và độ dốc 12 tuần.
-2. **Đà lương:** trung vị lương thay đổi thế nào.
-3. **Độ rộng:** bao nhiêu công ty khác nhau đang tuyển (10 công ty mỗi nơi 1 tin tốt hơn 1 công ty đăng 10 tin).
-4. **Độ khó tuyển:** tin mở càng lâu thì càng khó tuyển, tức là cơ hội cho ứng viên.
-5. **Độ thân thiện với người mới:** % tin nhận Intern/Fresher/Junior. Đây là tiêu chí quan trọng nhất với sinh viên.
+Tiêu chí (trọng số chỉnh được, khớp `WEIGHTS` trong `src/lib/ranking.ts`):
+1. **Đà nhu cầu:** tin 4 tuần gần nhất so với 4 tuần trước, và độ dốc 12 tuần.
+2. **Đà lương:** trung vị lương thay đổi thế nào (chỉ khi đủ mẫu có lương).
+3. **Độ rộng:** số công ty khác nhau đang tuyển.
+4. **Độ khó tuyển:** tin mở càng lâu càng khó tuyển (từ `first_seen` đến `closed_at`).
+5. **Thân thiện với người mới:** % tin Intern/Fresher/Junior.
 
-**Dự báo vài tháng tới:** bắt đầu đơn giản (đường xu hướng kèm vùng không chắc chắn), chỉ hiện khi có tối thiểu 8 tuần dữ liệu. Ghi rõ đây là dự báo, không phải số thật.
+Dự báo chỉ hiện khi có tối thiểu 8 tuần dữ liệu thật, và ghi rõ là dự báo.
 
-## 8. Ý tưởng thêm (đề xuất, chưa được duyệt; chọn cái nào đưa vào thì đưa)
+## 9. Để sau: extension Chrome và mạng xã hội (chưa làm)
 
-Cho sinh viên / người tìm việc:
-- **Điểm "nghề đáng đầu tư"**: gộp 5 tiêu chí ở mục 7 thành một điểm, kèm giải thích bằng câu chữ ("Data Engineer ở TP.HCM: nhu cầu +18%, 42% tin nhận Junior").
-- **Kỹ năng đang lên nhanh nhất**: kỹ năng có tỷ trọng tăng mạnh nhất, kể cả khi số tin còn nhỏ.
-- **Bậc thang lương theo cấp bậc**: cùng một nghề, Fresher → Junior → Middle → Senior được trả bao nhiêu.
-- **Bộ kỹ năng hay đi cùng nhau**: "Tin cần React thường cũng cần TypeScript, Node.js", giúp sinh viên biết nên học gì tiếp.
-- **"Đúng domain"**: lọc job theo lĩnh vực công ty + hình thức onsite/remote (từ yêu cầu gốc "làm đúng domain → lấy job").
+Dùng cho những nguồn **không cào được từ máy chủ**: TopCV, TopDev (chặn IP VPS hoặc chặn client không phải trình duyệt), các nguồn mà điều khoản không cho máy chủ cào, và mạng xã hội (Facebook group, LinkedIn).
 
-Cho chất lượng dữ liệu:
-- **Bảng độ phủ cào**: mỗi tuần cào được bao nhiêu tin, ở trang nào, ngành nào. Nhìn vào là biết tuần nào số liệu yếu.
-- **Lịch cào gợi ý** trong extension: nhắc nhóm cào những ngành/thành phố đang thiếu dữ liệu tuần này.
-- **Trang duyệt nhãn**: xem nhanh các nhãn AI có độ tin cậy thấp, sửa tay bằng một cú bấm.
+- Người dùng tự mở trang trên Chrome và bấm extension, nên dữ liệu được đọc từ trình duyệt của chính người đó.
+- Adapter riêng cho từng trang. Ưu tiên JSON-LD `JobPosting`, sau đó mới đọc HTML.
+- Gửi lô tin về **cùng API nhận dữ liệu** của crawler. Từ bước "lưu bản gốc" trở đi, dữ liệu đi chung đường xử lý.
+- Mỗi người cài có token cá nhân. Extension xóa SĐT và email trước khi gửi.
+- Lưu ý về độ phủ: dữ liệu từ extension không đều theo tuần, nên phải gắn nhãn nguồn và tính độ phủ riêng, để không làm lệch xu hướng của phần cào tự động.
+- Mạng xã hội: AI đọc bài đăng tự do. Cần thêm bước lọc tin trùng với tin trên trang tuyển dụng.
 
-Sau này:
-- Mở extension cho nhiều người góp dữ liệu (đã có token cá nhân; cần thêm giới hạn tốc độ, kiểm tra dữ liệu bất thường, và bảng xếp hạng người góp).
-- Mạng xã hội: AI đọc bài đăng tự do. Dùng chung đường xử lý từ bước "lưu bản gốc" trở đi.
-- Bản tin hằng tuần: "5 thay đổi lớn nhất của thị trường tuần này".
+## 10. Các giai đoạn
 
-## 9. Các giai đoạn đề xuất
+1. **Chốt nguồn** (mục 3): chọn phương án A/B/C, gửi email xin phép nếu chọn A hoặc C.
+2. **Nền:** PostgreSQL trên VPS, bảng `scan_run` / `raw_job`, khung crawler + adapter đầu tiên, systemd timer. Từ đây bắt đầu tích lũy dữ liệu.
+3. **Xử lý:** quy tắc (lương, thành phố, cấp bậc, hình thức), gộp trùng, AI phân loại nhóm nghề / kỹ năng / ưu đãi, hồ sơ công ty.
+4. **Nối dashboard:** API đọc số liệu, thay `src/data/*`, bỏ bộ chọn ngành, thêm cỡ mẫu và cảnh báo độ phủ.
+5. **Thêm nguồn được phép:** mỗi nguồn một adapter. VietnamWorks, CareerViet cần Playwright.
+6. **Xu hướng và dự báo** bằng số thật (sau ≥ 8 tuần dữ liệu).
+7. **Để sau:** extension Chrome, mạng xã hội (mục 9).
 
-1. **Nền dữ liệu:** CSDL, API nhận lô tin, lưu bản gốc.
-2. **Extension cho 1 trang** (đề xuất TopCV vì đa ngành): cào trang đang xem + cào danh sách, gửi về API.
-3. **Xử lý:** quy tắc (lương, thành phố, cấp bậc), gộp trùng, AI phân loại ngành/kỹ năng/ưu đãi, hồ sơ công ty.
-4. **Nối dashboard:** thay `src/data/*` bằng API, mở khóa bộ lọc, thêm cỡ mẫu và cảnh báo độ phủ.
-5. **Xu hướng và dự báo:** các tiêu chí ở mục 7, so sánh lương với vị trí tương đương bằng số thật.
-6. **Mở rộng:** thêm trang (VietnamWorks, CareerViet, Vieclam24h, ITviec, TopDev), rồi nhiều người góp, rồi mạng xã hội.
+## 11. Ràng buộc
 
-Mỗi giai đoạn chạy được và dùng được độc lập. Sau giai đoạn 2 là đã bắt đầu tích lũy dữ liệu.
+- Giữ Next.js 14 + Recharts. Giữ hoặc mở rộng `src/api/types.ts` và `src/lib/types.ts`.
+- Chạy trên VPS dùng chung. Crawler giới hạn RAM (Playwright khoảng 500MB), chạy giờ thấp điểm, không mở cổng ra ngoài.
+- Tôn trọng `robots.txt` **và** điều khoản sử dụng. Không lách cơ chế chặn. Không lưu thông tin cá nhân.
+- Chi phí AI nhỏ: chỉ xử lý tin mới hoặc thay đổi, phân tích mỗi công ty một lần.
 
-## 10. Ràng buộc
+## 12. Các quyết định kỹ thuật (có thể đổi)
 
-- Giữ Next.js 14 + Recharts hiện có. Giữ hoặc mở rộng `src/lib/types.ts`.
-- Cào với tốc độ giống người thật, chỉ dùng nội bộ. Tôn trọng điều khoản của từng trang ở mức có thể. Không lưu thông tin cá nhân.
-- Chi phí AI phải nhỏ: chỉ xử lý tin mới hoặc tin thay đổi, phân tích mỗi công ty một lần.
-- Thư mục dự án hiện chưa dùng git.
+- **Ngôn ngữ crawler:** TypeScript (Node), cùng repo với dashboard, để dùng chung kiểu dữ liệu và một bộ công cụ.
+- **CSDL:** PostgreSQL 17 trong container, volume riêng, sao lưu hằng ngày bằng `pg_dump`.
+- **Lịch chạy:** systemd timer gọi `docker compose run --rm crawler`. Không chạy thường trực.
+- **"Số tin theo tuần":** là **tin mới**, tính theo `datePosted` nếu có, nếu không thì theo `first_seen`. Lưu thêm "tin đang mở trong tuần" để tính độ khó tuyển.
 
-## 11. Các quyết định mình tự đưa ra (có thể đổi)
+## 13. Để người làm tự quyết
 
-- **Máy chủ:** dùng luôn Next.js (route handlers) làm API nhận dữ liệu, thay vì dựng một backend riêng. Ít thứ phải vận hành.
-- **CSDL:** PostgreSQL (chạy local khi phát triển, có thể dùng dịch vụ như Supabase/Neon khi triển khai), vì cần truy vấn tổng hợp theo tuần.
-- **Extension:** Chrome Manifest V3, viết bằng TypeScript.
-- **AI:** một model nhỏ, rẻ (ví dụ Claude Haiku) cho trích xuất có cấu trúc. Model cụ thể để người làm chọn. Chưa có ngân sách cụ thể: giả định nhóm tự tạo API key. Chi phí tăng theo số lần bấm, nên đặt **giới hạn số tin mỗi phiên** (mặc định 200, chỉnh được) và bỏ qua tin đã phân tích rồi.
-- **Xử lý theo phiên trên Vercel:** API chia tin thành từng lô nhỏ cho AI, mỗi lần gọi chỉ xử lý một lô, để không vượt giới hạn thời gian của hàm serverless. Trang kết quả hỏi tiến độ định kỳ.
-- **Trang đầu tiên:** TopCV (đa ngành, nhiều tin ở 3 thành phố).
-- **Danh mục ngành/nhóm nghề/kỹ năng chuẩn:** khởi đầu từ danh mục đang có trong `src/data/overview.ts`, mở rộng dần.
-- **Độ phủ cào:** khi cào trang kết quả tìm kiếm, extension ghi lại **tổng số kết quả mà trang báo** (theo bộ lọc, thành phố, ngày). Độ phủ = số tin đã lấy ÷ tổng trang báo. Con số này chỉ ghi được lúc cào, không lấy lại sau được, nên ghi ngay từ giai đoạn 2.
-- **Trang công ty:** ở chế độ cào danh sách, extension mở trang công ty **một lần cho mỗi công ty mới** (bộ đọc có thêm loại trang thứ ba). Nếu không mở được thì phân loại tạm từ đoạn giới thiệu công ty trên trang tin. Máy chủ không tự đi cào, để tránh bị chặn IP.
-- **Thông tin cá nhân:** extension xóa số điện thoại và email khỏi văn bản **trước khi gửi**. "Bản gốc" được lưu là bản đã xóa các thông tin này. Chấp nhận việc xử lý lại sau này sẽ chạy trên bản đã làm sạch.
-- **"Số tin theo tuần":** là **tin mới**, tính theo ngày đăng nếu trang có, nếu không thì theo lần đầu thấy. Khớp với ý nghĩa "tin mới theo tuần" trong `src/lib/types.ts`. Ngoài ra lưu "tin đang mở trong tuần" (từ lần đầu thấy đến lần cuối thấy) để tính độ khó tuyển.
-
-## 12. Để người làm tự quyết
-
-- Thư viện truy cập CSDL, cách chạy xử lý nền (hàng đợi hay chạy định kỳ).
+- Thư viện truy cập CSDL và cách chạy migration.
 - Chi tiết thuật toán gộp tin trùng và ngưỡng giống nhau.
-- Cấu trúc thư mục extension, cách đóng gói.
 - Ngưỡng cỡ mẫu tối thiểu cho từng loại số liệu.

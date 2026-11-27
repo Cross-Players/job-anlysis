@@ -1,9 +1,9 @@
 'use client';
-import { CITIES } from '@/data/cities';
 import { useFilters } from '@/context/FilterContext';
+import { CITIES } from '@/lib/constants';
 import type { CityFilter } from '@/lib/types';
 
-/** Chọn thành phố, dùng chung state giữa Tổng quan và Công ty */
+/** Chọn thành phố, dùng chung state giữa các trang */
 export function CitySelect() {
   const { city, setCity } = useFilters();
   return (

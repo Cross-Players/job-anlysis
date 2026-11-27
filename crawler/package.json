@@ -1,0 +1,22 @@
+{
+  "name": "job-analysis-crawler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cào tin tuyển dụng IT theo lịch trên VPS. Chạy thẳng file .ts bằng Node 24 (type stripping), không cần build.",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "crawl": "node src/run.ts",
+    "report": "node src/report.ts",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.8.0"
+  }
+}

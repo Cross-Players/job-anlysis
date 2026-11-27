@@ -1,62 +1,39 @@
-// Thẻ "Cơ cấu theo ngành" (khi xem tất cả) hoặc "Cơ cấu nhóm nghề" (trong một ngành).
-// Trên: biểu đồ tròn. Dưới: danh sách có ô màu, %, và thay đổi so với kỳ trước.
-// Bấm vào lát hoặc dòng để lọc cả trang.
+// Thẻ "Cơ cấu nhóm nghề": biểu đồ tròn + danh sách. Bấm lát hoặc dòng để lọc cả trang theo nhóm đó.
 import { Card } from '@/components/ui/Card';
-import { Delta } from '@/components/ui/Delta';
 import { MixPie, seriesColor, type PieSlice } from '@/components/charts/MixPie';
-import { IND } from '@/data/overview';
-import { pct } from '@/lib/stats';
-import type { OverviewData } from '@/lib/overview';
-import { cityLabel } from '@/lib/cities';
 import { EmptyFilterNote, SampleSize } from '@/components/ui/Reliability';
 import { MIN_SAMPLE } from '@/lib/constants';
+import type { OverviewData } from '@/lib/market';
 
-interface Props { d: OverviewData; ind: string; sel: string | null; onPick: (id: string) => void }
+interface Props { d: OverviewData; groupOrder: string[]; subtitle: string; onPick: (id: string) => void }
 
-export function GroupMix({ d, ind, sel, onPick }: Props) {
-  const { G, tot } = d;
+export function GroupMix({ d, groupOrder, subtitle, onPick }: Props) {
+  const { groups, groupTotal: tot } = d;
+  const sel = d.selected?.id ?? null;
+  // Màu gắn theo thứ tự cố định của danh mục nhóm (không theo thứ hạng) để màu không đổi khi lọc
+  const colorOf = (id: string) => seriesColor(Math.max(0, groupOrder.indexOf(id)));
+  const slices: PieSlice[] = groups.map((g) => ({ id: g.id, name: g.name, value: g.n, color: colorOf(g.id) }));
+  const title = 'Cơ cấu nhóm nghề';
 
-  // Gán màu theo thứ tự gốc của dữ liệu (trước khi sắp xếp) để màu không đổi khi thứ hạng đổi
-  const slices: PieSlice[] = G.map((g, index) => ({
-    id: g.id,
-    name: g.name,
-    value: g.jobs,
-    color: seriesColor(index),
-  }));
-
-  // Danh sách bên dưới thì sắp từ lớn đến nhỏ cho dễ đọc
-  const rows = [...G].sort((a, b) => b.jobs - a.jobs);
-
-  const title = ind === 'all' ? 'Cơ cấu theo ngành' : `Cơ cấu nhóm nghề · ${IND[ind].name}`;
-  const subtitle = `${cityLabel(d.city)} · tỷ trọng tin mới · so với kỳ trước · bấm để lọc cả trang`;
-
-  // Quá ít tin thì tỷ trọng không có ý nghĩa (và 0 tin thì không chia được)
   if (tot < MIN_SAMPLE) return <Card title={title} subtitle={subtitle}><EmptyFilterNote n={tot} /></Card>;
 
   return (
-    <Card title={title} subtitle={subtitle} action={<SampleSize n={tot} />}>
-      <MixPie slices={slices} total={tot} selectedId={sel} onPick={onPick} />
-
-      {rows.map((g) => {
-        const slice = slices.find((s) => s.id === g.id);
-        const color = slice ? slice.color : 'var(--mut)';
-        const percent = ((g.jobs / tot) * 100).toFixed(0);
-
+    <Card title={title} subtitle={`${subtitle} · bấm để lọc cả trang`} action={<SampleSize n={tot} />}>
+      <MixPie slices={slices} total={tot} selectedId={sel} onPick={onPick} centerLabel="tin đang mở" />
+      {groups.map((g) => {
         let rowClass = 'fam';
         if (sel === g.id) rowClass += ' on';
         if (sel && sel !== g.id) rowClass += ' dim';
-
         return (
           <div key={g.id} className={rowClass} onClick={() => onPick(g.id)}>
-            <i className="sw" style={{ background: color }} />
+            <i className="sw" style={{ background: colorOf(g.id) }} />
             <span className="n">{g.name}</span>
-            <span className="pc">{percent}%</span>
-            <Delta value={pct(g.jobs, g.prev)} digits={0} />
+            <span className="pc">{((g.n / tot) * 100).toFixed(0)}%</span>
+            <span className="mini" style={{ textAlign: 'right' }}>{g.n} tin</span>
           </div>
         );
       })}
-
-      <p className="foot">{ind === 'all' ? 'Bấm một ngành để xem chi tiết nhóm nghề bên trong.' : 'Bấm lần nữa để bỏ chọn.'}</p>
+      <p className="foot">{sel ? 'Bấm lần nữa để bỏ chọn.' : 'Phân nhóm theo từ khóa trong chức danh.'}</p>
     </Card>
   );
 }

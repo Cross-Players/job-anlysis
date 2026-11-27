@@ -90,3 +90,5 @@
 .ov .hot span:nth-child(2){display:none}
 }
 .ov .mb{margin-bottom:12px}
+.ov .hot.two{grid-template-columns:1fr auto}
+.ov .kpi .mini{margin-top:2px}

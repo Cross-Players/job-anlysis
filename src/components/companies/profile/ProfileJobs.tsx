@@ -1,29 +1,24 @@
-// Danh sách vị trí đang mở của công ty, đã lọc theo thành phố, cấp bậc, hình thức làm việc
+// Danh sách tin đang mở của công ty, khớp bộ lọc. Chỉ hiện dữ kiện và link về tin gốc, không chép nội dung tin.
+import type { SnapshotJob } from '@/api/snapshot';
 import { Card } from '@/components/ui/Card';
-import type { OpenJob } from '@/lib/profile';
-import { cityLabel } from '@/lib/cities';
-import { LEVELS, WORK_MODES } from '@/lib/constants';
-import type { Filters, Level, WorkMode } from '@/lib/types';
+import { CITIES, SOURCE_LABELS } from '@/lib/constants';
+import { levelLabel, modeLabel, salaryText, viDate } from '@/lib/market';
 
-function levelLabel(level: Level): string {
-  const found = LEVELS.find((l) => l.key === level);
-  return found ? found.label : level;
-}
-
-function modeLabel(mode: WorkMode): string {
-  const found = WORK_MODES.find((m) => m.key === mode);
-  return found ? found.label : mode;
-}
-
-export function ProfileJobs({ jobs, f }: { jobs: OpenJob[]; f: Filters }) {
+export function ProfileJobs({ jobs }: { jobs: SnapshotJob[] }) {
   return (
-    <Card title="Vị trí đang mở" subtitle={`${cityLabel(f.city)} · hình thức làm việc lấy từ nội dung tin`}>
-      {jobs.map((j) => (
-        <div key={`${j.title}-${j.level}-${j.city}`} className="job">
-          <span><b>{j.title}</b> <span className="mini">· {levelLabel(j.level)} · {cityLabel(j.city)}</span></span>
-          <span><span className={`bd ${j.mode === 'onsite' ? 'm' : ''}`}>{modeLabel(j.mode)}</span><b>{j.salary} tr</b></span>
-        </div>
-      ))}
+    <Card title="Vị trí đang mở" subtitle="Bấm để xem tin gốc trên trang tuyển dụng">
+      {jobs.map((j) => {
+        const mode = modeLabel(j.mode);
+        return (
+          <a key={j.id} className="job" href={j.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+            <span>
+              <b>{j.title}</b>
+              <span className="mini"> · {levelLabel(j.level)}{mode ? ` · ${mode}` : ''} · {j.cities.map((c) => CITIES.find((x) => x.key === c)?.label ?? c).join(', ')} · đăng {viDate(j.posted)} · {SOURCE_LABELS[j.source] ?? j.source} ↗</span>
+            </span>
+            <span><b>{salaryText(j.salaryMin, j.salaryMax)}</b></span>
+          </a>
+        );
+      })}
       {!jobs.length && <p className="mini">Không có vị trí nào khớp bộ lọc đang chọn.</p>}
     </Card>
   );

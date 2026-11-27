@@ -1,0 +1,67 @@
+# Chạy trên VPS (/srv/job-analysis/deploy). Biến DB_PASSWORD đọc từ deploy/.env (chỉ có trên VPS, không vào git).
+#   docker compose up -d --build                       dashboard + CSDL
+#   docker compose --profile crawler run --rm crawler  một lượt cào (systemd timer gọi lệnh này mỗi đêm)
+#   docker compose --profile crawler run --rm crawler node src/export.ts   xuất data/snapshot.json cho dashboard
+# Thư mục ../data (= /srv/job-analysis/data, chủ sở hữu uid 1000 = user node) chứa snapshot.json:
+# crawler ghi, nginx chỉ đọc. Không nằm trong git, deploy.sh không đụng tới.
+name: job-analysis
+
+services:
+  # Dashboard tĩnh, Caddy reverse_proxy job-analysis:80
+  job-analysis:
+    build:
+      context: ..
+    image: job-analysis:latest
+    container_name: job-analysis
+    restart: unless-stopped
+    mem_limit: 64m
+    volumes:
+      - ../data:/usr/share/nginx/html/data:ro
+    networks: [edge]
+
+  db:
+    image: postgres:17.11-alpine
+    container_name: job-analysis-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jobs
+      POSTGRES_USER: jobs
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Thiếu DB_PASSWORD trong deploy/.env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobs -d jobs"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [internal]
+
+  # Không chạy thường trực: chỉ chạy khi gọi với --profile crawler
+  crawler:
+    build:
+      context: ../crawler
+    image: job-analysis-crawler:latest
+    profiles: [crawler]
+    environment:
+      DATABASE_URL: postgres://jobs:${DB_PASSWORD}@db:5432/jobs
+      CRAWL_SOURCES: ${CRAWL_SOURCES:-vieclam24h}
+      CRAWL_MAX_FETCH: ${CRAWL_MAX_FETCH:-2000}
+      EXPORT_PATH: /data/snapshot.json
+    volumes:
+      - ../data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 256m
+    networks: [internal]
+
+networks:
+  edge:
+    name: ragre_default
+    external: true
+  # Mạng riêng của dự án: CSDL không lộ ra network chung của Caddy. Crawler vẫn ra Internet được.
+  internal: {}
+
+volumes:
+  db-data:

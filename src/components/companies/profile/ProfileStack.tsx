@@ -1,13 +1,16 @@
 import { Card } from '@/components/ui/Card';
-import type { Company } from '@/lib/types';
+import { MIN_COMPANY_JOBS_FOR_STACK } from '@/lib/constants';
+import type { Share } from '@/lib/market';
 
-export function ProfileStack({ c }: { c: Company }) {
+export function ProfileStack({ stack, n }: { stack: Share[] | null; n: number }) {
   return (
-    <Card title="Stack suy ra từ tin tuyển dụng" subtitle="% tin của công ty nhắc đến kỹ năng · chỉ tính kỹ năng xuất hiện từ 3 tin">
-      {c.stack.map(([n, p]) => (
-        <div key={n} className="sk"><span>{n}</span><div className="trk"><i style={{ width: `${p}%` }} /></div><b>{p}%</b></div>
+    <Card title="Kỹ năng công ty đang tuyển" subtitle="% tin của công ty nhắc đến kỹ năng">
+      {stack === null && <p className="mini">Công ty có {n} tin khớp bộ lọc, cần ít nhất {MIN_COMPANY_JOBS_FOR_STACK} tin để tổng hợp kỹ năng.</p>}
+      {stack?.map((s) => (
+        <div key={s.name} className="sk"><span>{s.name}</span><div className="trk"><i style={{ width: `${s.pct}%` }} /></div><b>{Math.round(s.pct)}%</b></div>
       ))}
-      <p className="foot">Đây là stack công ty đang <b>tuyển</b>, chưa chắc đã là stack đang chạy production.</p>
+      {stack && !stack.length && <p className="mini">Chưa nhận ra kỹ năng cụ thể nào trong các tin của công ty.</p>}
+      <p className="foot">Đây là kỹ năng công ty đang <b>tuyển</b>, chưa chắc đã là stack đang chạy production.</p>
     </Card>
   );
 }

@@ -3,7 +3,7 @@
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-vn),"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
 [hidden]{display:none!important}.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 48px}.delta{font-weight:600}.up{color:var(--up)}.dn{color:var(--dn)}.nav{background:var(--card);border-bottom:1px solid var(--line)}.navi{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}.tabs{display:flex;gap:4px}.tabs a{font-weight:500;color:var(--mut);padding:7px 14px;border-radius:9px;text-decoration:none}.tabs a.on{background:var(--acc2);color:var(--acc);font-weight:600}
 
 /* Nhãn độ tin cậy dùng chung (components/ui/Reliability.tsx) */

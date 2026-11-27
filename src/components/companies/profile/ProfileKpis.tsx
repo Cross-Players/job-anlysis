@@ -1,15 +1,18 @@
-import { Delta } from '@/components/ui/Delta';
-import type { Company } from '@/lib/types';
+import { MIN_SALARY_SAMPLE } from '@/lib/constants';
+import { salaryText, viDate, type CompanyDetail } from '@/lib/market';
 
-export function ProfileKpis({ c }: { c: Company }) {
-  const weeks = c.w.length;
-  const diff = Math.abs((c.ratio - 1) * 100).toFixed(0);
+export function ProfileKpis({ d }: { d: CompanyDetail }) {
+  const r = d.row!;
   return (
     <div className="card kp">
-      <div><div className="l">Tin đang mở</div><div className="v">{c.open}</div></div>
-      <div><div className="l">Tin mới {weeks} tuần</div><div className="v">{c.j}</div><div className="d">{c.j >= 6 && <Delta value={c.g} digits={0} />} <span className="mini">vs {weeks} tuần trước</span></div></div>
-      <div><div className="l">Tuổi thọ tin trung bình</div><div className="v">{c.age} ngày</div><div className="mini">Càng lâu càng khó tuyển</div></div>
-      <div><div className="l">Lương vs nhóm tương đương</div><div className={`v ${c.ratio >= 1 ? 'up' : 'dn'}`}>{c.ratio >= 1 ? '+' : '−'}{diff}%</div><div className="mini">{Math.round(c.disc * 100)}% tin công khai lương</div></div>
+      <div><div className="l">Tin đang mở</div><div className="v">{r.n}</div><div className="mini">khớp bộ lọc · {r.mainGroup}</div></div>
+      <div><div className="l">Khoảng lương công bố</div><div className="v">{salaryText(r.salaryLo, r.salaryHi)}</div><div className="mini">{r.salaryN}/{r.n} tin công khai lương</div></div>
+      <div>
+        <div className="l">Lương trung vị</div>
+        <div className="v">{d.salary && d.salary.n >= MIN_SALARY_SAMPLE ? `${d.salary.med.toFixed(1)} tr` : '—'}</div>
+        <div className="mini">{d.salary && d.salary.n >= MIN_SALARY_SAMPLE ? `n = ${d.salary.n}` : `Cần ít nhất ${MIN_SALARY_SAMPLE} tin có lương`}</div>
+      </div>
+      <div><div className="l">Tin mới nhất</div><div className="v">{viDate(r.latestPosted)}</div><div className="mini">Ngày đăng theo nguồn</div></div>
     </div>
   );
 }

@@ -1,72 +1,72 @@
-// Render các thẻ trang Tổng quan và Hồ sơ công ty ra HTML với mọi tổ hợp bộ lọc,
-// rồi kiểm tra không có chữ "NaN" / "Infinity" và không thẻ nào bị lỗi khi render.
-// (Không cần trình duyệt: renderToString chạy được trong Node.)
+// Render các thẻ Tổng quan và Hồ sơ công ty ra HTML với mọi tổ hợp bộ lọc (kể cả snapshot rỗng),
+// rồi kiểm tra không có "NaN" / "Infinity" / "undefined" và không thẻ nào lỗi khi render.
 import { expect, test, vi } from 'vitest';
 import { renderToString } from 'react-dom/server';
-import { getCompany, getOverview } from '@/api';
-import { LEVELS, WORK_MODES } from '@/lib/constants';
-import type { CityFilter, Filters, Level, Weeks, WorkMode } from '@/lib/types';
-import { InsightsCard } from '@/components/overview/InsightsCard';
+import type { ReactElement } from 'react';
+import { FilterProvider } from '@/context/FilterContext';
+import { CITIES, DEFAULT_FILTERS, LEVELS, SECTORS, WORK_MODES } from '@/lib/constants';
+import { companyDetail, computeOverview } from '@/lib/market';
+import type { CityFilter, Filters, Level, SectorFilter, WorkMode } from '@/lib/types';
+import { KpiCards } from '@/components/overview/KpiCards';
 import { GroupMix } from '@/components/overview/GroupMix';
+import { TopSkills } from '@/components/overview/TopSkills';
 import { SalaryRanges } from '@/components/overview/SalaryRanges';
-import { DemandVsSalary } from '@/components/overview/DemandVsSalary';
-import { TrendCard } from '@/components/overview/TrendCard';
+import { LevelMix } from '@/components/overview/LevelMix';
+import { TopCompanies } from '@/components/overview/TopCompanies';
 import { ProfileKpis } from '@/components/companies/profile/ProfileKpis';
-import { ProfileSalary } from '@/components/companies/profile/ProfileSalary';
 import { ProfileJobs } from '@/components/companies/profile/ProfileJobs';
-import { ProfileTrend } from '@/components/companies/profile/ProfileTrend';
+import { ProfileStack } from '@/components/companies/profile/ProfileStack';
+import { DataSource } from '@/components/ui/DataSource';
+import { makeSnapshot } from '@/test/fixture';
 
-// Recharts cần kích thước thật của trình duyệt; trong Node ta bỏ qua cảnh báo kích thước
-vi.spyOn(console, 'warn').mockImplementation(() => {});
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: () => {} }), usePathname: () => '/overview' }));
+vi.spyOn(console, 'warn').mockImplementation(() => {}); // Recharts cảnh báo kích thước khi không có trình duyệt
 
 function allFilters(): Filters[] {
-  const weeksList: Weeks[] = [4, 12, 24];
-  const cities: CityFilter[] = ['all', 'hn', 'dn', 'hcm'];
+  const sectors: SectorFilter[] = ['all', ...SECTORS.map((s) => s.key)];
+  const cities: CityFilter[] = ['all', ...CITIES.map((c) => c.key)];
   const levels: (Level | 'all')[] = ['all', ...LEVELS.map((l) => l.key)];
   const modes: (WorkMode | 'all')[] = ['all', ...WORK_MODES.map((m) => m.key)];
-  const result: Filters[] = [];
-  for (const weeks of weeksList)
-    for (const city of cities)
-      for (const level of levels)
-        for (const mode of modes) result.push({ weeks, city, level, mode });
-  return result;
+  return sectors.flatMap((sector) =>
+    cities.flatMap((city) => levels.flatMap((level) => modes.map((mode) => ({ sector, city, level, mode })))),
+  );
 }
 
-test('thẻ Tổng quan không hiện NaN ở mọi tổ hợp bộ lọc', async () => {
-  const bad: string[] = [];
-  for (const f of allFilters()) {
-    for (const ind of ['all', 'it', 'kt', 'mk']) {
-      const d = await getOverview(ind, null, f);
-      const html = renderToString(
-        <>
-          <InsightsCard d={d} />
-          <TrendCard d={d} ind={ind} />
-          <GroupMix d={d} ind={ind} sel={null} onPick={() => {}} />
-          <SalaryRanges d={d} />
-          <DemandVsSalary d={d} />
-        </>,
-      );
-      if (html.includes('NaN') || html.includes('Infinity')) bad.push(`${ind} ${JSON.stringify(f)}`);
-    }
-  }
-  expect(bad.slice(0, 5)).toEqual([]);
-});
+const html = (el: ReactElement) => renderToString(<FilterProvider>{el}</FilterProvider>);
+const BAD = /NaN|Infinity|undefined/;
 
-test('thẻ Hồ sơ công ty không hiện NaN ở mọi tổ hợp bộ lọc', async () => {
-  const bad: string[] = [];
-  for (const f of allFilters()) {
-    for (let id = 0; id < 8; id++) {
-      const detail = (await getCompany(id, f))!;
-      const html = renderToString(
-        <>
-          <ProfileKpis c={detail.company} />
-          <ProfileTrend c={detail.company} />
-          <ProfileSalary rows={detail.peerRows} f={f} />
-          <ProfileJobs jobs={detail.jobs} f={f} />
-        </>,
-      );
-      if (html.includes('NaN') || html.includes('Infinity')) bad.push(`${id} ${JSON.stringify(f)}`);
+for (const [label, snap] of [['đủ dữ liệu', makeSnapshot(300)], ['ít dữ liệu', makeSnapshot(20)], ['rỗng', makeSnapshot(0)]] as const) {
+  test(`Tổng quan không hiện NaN với mọi bộ lọc (${label})`, () => {
+    for (const f of allFilters()) {
+      for (const group of [null, 'web', 'data']) {
+        const d = computeOverview(snap, f, group);
+        const out = [
+          html(<KpiCards d={d} />),
+          html(<GroupMix d={d} groupOrder={snap.groups.map((g) => g.id)} subtitle="x" onPick={() => {}} />),
+          html(<TopSkills d={d} subtitle="x" />),
+          html(<SalaryRanges d={d} subtitle="x" />),
+          html(<LevelMix d={d} subtitle="x" />),
+          html(<TopCompanies d={d} />),
+          html(<DataSource snap={snap} />),
+        ].join('');
+        expect(out, `${JSON.stringify(f)} nhóm=${group}`).not.toMatch(BAD);
+      }
     }
-  }
-  expect(bad.slice(0, 5)).toEqual([]);
+  });
+
+  test(`Hồ sơ công ty không hiện NaN với mọi bộ lọc (${label})`, () => {
+    for (const f of allFilters()) {
+      for (const id of ['cong-ty-0', 'cong-ty-5']) {
+        const d = companyDetail(snap, id, f);
+        if (!d || !d.row) continue;
+        const out = html(<><ProfileKpis d={d} /><ProfileJobs jobs={d.jobs} /><ProfileStack stack={d.stack} n={d.jobs.length} /></>);
+        expect(out, `${JSON.stringify(f)} ${id}`).not.toMatch(BAD);
+      }
+    }
+  });
+}
+
+test('Lương dưới ngưỡng hiện "Chưa đủ dữ liệu" thay vì con số', () => {
+  const d = computeOverview(makeSnapshot(20), DEFAULT_FILTERS, null);
+  expect(html(<KpiCards d={d} />)).toContain('Chưa đủ dữ liệu');
 });

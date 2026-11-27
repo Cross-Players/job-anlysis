@@ -1,13 +1,13 @@
 'use client';
-// Biểu đồ tròn (dạng vành khuyên) cho thẻ "Cơ cấu theo ngành" ở trang Tổng quan.
-// Mỗi lát là một ngành (hoặc một nhóm nghề), độ lớn lát = số tin mới.
+// Biểu đồ tròn (dạng vành khuyên) cho thẻ "Cơ cấu nhóm nghề" ở trang Tổng quan.
+// Mỗi lát là một nhóm nghề, độ lớn lát = số tin.
 // Bấm vào lát để lọc cả trang, giống như bấm vào dòng trong danh sách bên dưới.
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 export interface PieSlice {
   id: string;
   name: string;
-  value: number; // số tin mới
+  value: number; // số tin
   color: string; // màu cố định của nhóm, xem seriesColor()
 }
 
@@ -16,6 +16,7 @@ interface Props {
   total: number; // tổng số tin, hiện ở giữa vành
   selectedId: string | null; // nhóm đang được chọn (null = chưa chọn)
   onPick: (id: string) => void;
+  centerLabel?: string; // chữ dưới tổng số ở giữa vành
 }
 
 // Bảng màu có 6 màu (khai báo --s1 ... --s6 trong globals.css).
@@ -26,7 +27,7 @@ export function seriesColor(index: number): string {
   return `var(--s${slot})`;
 }
 
-export function MixPie({ slices, total, selectedId, onPick }: Props) {
+export function MixPie({ slices, total, selectedId, onPick, centerLabel = 'tin' }: Props) {
   return (
     <div className="pie">
       <ResponsiveContainer width="100%" height={190}>
@@ -60,7 +61,7 @@ export function MixPie({ slices, total, selectedId, onPick }: Props) {
           <Tooltip
             formatter={(value: number) => {
               const percent = ((value / total) * 100).toFixed(0);
-              return [`${value} tin · ${percent}%`, 'Tin mới'];
+              return [`${value} tin · ${percent}%`, 'Số tin'];
             }}
             contentStyle={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10, fontSize: 12 }}
             itemStyle={{ color: 'var(--ink)' }}
@@ -70,7 +71,7 @@ export function MixPie({ slices, total, selectedId, onPick }: Props) {
       {/* Chữ ở giữa vành: tổng số tin */}
       <div className="pie-center">
         <b>{total.toLocaleString('vi-VN')}</b>
-        <span>tin mới</span>
+        <span>{centerLabel}</span>
       </div>
     </div>
   );

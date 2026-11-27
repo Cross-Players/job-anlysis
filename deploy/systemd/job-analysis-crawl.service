@@ -1,0 +1,14 @@
+[Unit]
+Description=Job analysis: một lượt cào tin IT + xuất snapshot cho dashboard + sao lưu CSDL
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/job-analysis/deploy
+ExecStart=/usr/bin/docker compose --profile crawler run --rm crawler
+# Xuất snapshot và sao lưu chạy cả khi lượt cào lỗi (một nguồn bị chặn thì nguồn khác vẫn có số mới).
+# Dấu - : lỗi ở bước này không che mất trạng thái của lượt cào.
+ExecStopPost=-/usr/bin/docker compose --profile crawler run --rm crawler node src/export.ts
+ExecStopPost=-/srv/job-analysis/deploy/backup-db.sh
+TimeoutStartSec=3h
